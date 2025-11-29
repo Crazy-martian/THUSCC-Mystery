@@ -11,6 +11,8 @@
 source ~/.bashrc
 conda activate mystery_env
 
+module load gcc/9.2.0
+
 
 echo "X Ray Image task: "
 
@@ -21,6 +23,7 @@ echo "================================================================"
 
 # python ratio_calculate.py
 
+export CFITSIO_INSTALL_DIR=$PWD/cfitsio_local
 export LD_LIBRARY_PATH=$CFITSIO_INSTALL_DIR/lib:$LD_LIBRARY_PATH
 
 ./ratio_calc

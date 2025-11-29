@@ -7,7 +7,7 @@ echo "compiling"
 
 g++ ratio_calculate.cpp -o ratio_calc \
     -std=c++17 \
-    # -fopenmp \
+    -fopenmp \
     -O3 \
     -I$CFITSIO_INSTALL_DIR/include \    # 告诉 g++ 在哪里查找 fitsio.h
     -L$CFITSIO_INSTALL_DIR/lib \       # 告诉 g++ 在哪里查找 libcfitsio.so

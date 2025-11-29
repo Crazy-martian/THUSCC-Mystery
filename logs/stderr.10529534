@@ -1,0 +1,2 @@
+ERROR: Unable to locate a modulefile for 'gcc/9.2.0'
+/ram/var/spool/slurm/d/job10529534/slurm_script: line 29: ./ratio_calc: No such file or directory

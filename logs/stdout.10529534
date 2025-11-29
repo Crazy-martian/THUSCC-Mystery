@@ -1,0 +1,48 @@
+X Ray Image task: 
+================================================================
+[2025-11-29 18:04:01.554] Running...
+================================================================
+================================================================
+[2025-11-29 18:04:01.560] Checking...
+================================================================
+source rate of 0 is 0.007
+source rate of 1 is 0.007
+source rate of 2 is 0.007
+source rate of 3 is 0.008
+source rate of 4 is 0.008
+source rate of 5 is 0.008
+source rate of 6 is 0.009
+source rate of 7 is 0.009
+source rate of 8 is 0.009
+source rate of 9 is 0.01
+source rate of 10 is 0.01
+source rate of 11 is 0.01
+det rate of 0 is 0.01024529617279768
+det rate of 1 is 0.009897658601403236
+det rate of 2 is 0.01031455397605896
+det rate of 3 is 0.008935738354921341
+det rate of 4 is 0.008082491345703602
+det rate of 5 is 0.009994600899517536
+det rate of 6 is 0.009585249237716198
+det rate of 7 is 0.007761181797832251
+det rate of 8 is 0.009258153848350048
+det rate of 9 is 0.0074326214380562305
+det rate of 10 is 0.00845876894891262
+det rate of 11 is 0.00784590095281601
+source #0: distance = 0.0, delta rate = 0.0002452961727976797
+source #1: distance = 0.0, delta rate = 0.00010234139859676382
+source #2: distance = 0.0, delta rate = 0.00031455397605895975
+source #3: distance = 1.4142135623730951, delta rate = 0.0009357383549213408
+source #4: distance = 0.0, delta rate = 8.249134570360167e-05
+source #5: distance = 1.0, delta rate = 0.0009946008995175368
+source #6: distance = 1.0, delta rate = 0.0005852492377161986
+source #7: distance = 1.0, delta rate = 0.00023881820216774957
+source #8: distance = 3.0, delta rate = 0.00025815384835004875
+source #9: distance = 1.0, delta rate = 0.0004326214380562304
+source #10: distance = 1.0, delta rate = 0.0014587689489126204
+source #11: distance = 4.123105625617661, delta rate = 0.0008459009528160094
+max distance: 4.123105625617661
+max delta rate: 0.0014587689489126204
+================================================================
+[2025-11-29 18:04:02.505] Done.
+================================================================
