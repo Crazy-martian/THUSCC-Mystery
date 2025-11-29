@@ -1,26 +1,29 @@
 #!/bin/bash
 
-#SBATCH -J MYSTERY-OPTIMIZED
-#SBATCH -p cnall         # 使用队列
-#SBATCH -N 1             # 使用节点数
-#SBATCH --ntasks-per-node=1  # 每个节点使用的核数
+#SBATCH -J MYSTERY-RUN
+#SBATCH -p cnall        
+#SBATCH -N 1          
+#SBATCH --ntasks-per-node=1 
 #SBATCH --cpus-per-task=56
-#SBATCH -o logs/stdout.%j      # 标准输出
-#SBATCH -e logs/stderr.%j      # 错误输出
+#SBATCH -o logs/stdout.%j    
+#SBATCH -e logs/stderr.%j 
 
 source ~/.bashrc
 conda activate mystery_env
 
 
-
-echo "X Ray Image task:"
+echo "X Ray Image task: "
 
 
 echo "================================================================"
 echo "[$(date +"%Y-%m-%d %H:%M:%S.%3N")] Running..."
 echo "================================================================"
 
-python ratio_calculate.py
+# python ratio_calculate.py
+
+export LD_LIBRARY_PATH=$CFITSIO_INSTALL_DIR/lib:$LD_LIBRARY_PATH
+
+./ratio_calc
 
 echo "================================================================"
 echo "[$(date +"%Y-%m-%d %H:%M:%S.%3N")] Checking..."
