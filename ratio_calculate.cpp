@@ -84,6 +84,7 @@ void core_calculation(const std::vector<Event>& data, float* ratio_grid, float* 
     const float pi = 3.1415926535f;
 
     // This loop is not parallelized in Python
+    #pragma omp parallel for
     for (int x = 0; x < DATA_SIZE_X; ++x) {
         float dx = CENTER_X - x - 0.5f; 
         for (int y = 0; y < DATA_SIZE_Y; ++y) {
@@ -214,6 +215,8 @@ void core_calculation(const std::vector<Event>& data, float* ratio_grid, float* 
                     float R = INITIAL_R;
                     for (int iter = 0; iter < ITERATION; ++iter) {
                         float temp_R = 0.0f;
+                        
+                        #pragma omp simd reduction(+:temp_R)
                         for (int k = 0; k < local_count; ++k) {
                             float s = local_s[k];
                             temp_R += (R * s) / ((R * s + BKG_RATE) * T_EXP);
@@ -224,6 +227,7 @@ void core_calculation(const std::vector<Event>& data, float* ratio_grid, float* 
 
                     // --- Log Likelihood ---
                     float log_sum = 0.0f;
+                    #pragma omp simd reduction(+:log_sum)  
                     for (int k = 0; k < local_count; ++k) {
                         log_sum += std::log(1.0f + R * local_s[k] * INV_BKG);
                     }
