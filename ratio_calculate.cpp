@@ -56,20 +56,16 @@ void check_fits_status(int status) {
 
 
 /**
- * @brief Performs the core likelihood calculation.
- * This function ports both precompute_and_build_grid
- * and core_calculation from the Python script.
- * * @param data      Vector of all photon events.
- * @param ratio_grid Output pointer for the likelihood map (must be pre-allocated).
- * @param R_grid     Output pointer for the rate map (must be pre-allocated).
+Performs the core likelihood calculation. This function ports both precompute_and_build_grid and core_calculation from the Python script.
+data       Vector of all photon events.
+ratio_grid Output pointer for the likelihood map (must be pre-allocated).
+R_grid     Output pointer for the rate map (must be pre-allocated).
  */
 void core_calculation(const std::vector<Event>& data, float* ratio_grid, float* R_grid) {
     
     // --- 1. Precomputation (from precompute_and_build_grid) ---
-    //
     
     // --- 1a. Geometry Maps ---
-    //
     // Allocate memory for PSF geometry maps
     auto s_maj_map_ptr = std::make_unique<float[]>(DATA_SIZE_X * DATA_SIZE_Y);
     auto s_min_map_ptr = std::make_unique<float[]>(DATA_SIZE_X * DATA_SIZE_Y);
@@ -84,39 +80,38 @@ void core_calculation(const std::vector<Event>& data, float* ratio_grid, float* 
     float* ca    = cos_map_ptr.get();
     float* nc    = norm_map_ptr.get();
 
-    const float max_dist_inv = 1.0f / 362.039f; //
+    const float max_dist_inv = 1.0f / 362.039f; 
     const float pi = 3.1415926535f;
 
-    // This loop is not parallelized in Python, so we keep it serial here.
+    // This loop is not parallelized in Python
     for (int x = 0; x < DATA_SIZE_X; ++x) {
-        float dx = CENTER_X - x - 0.5f; //
+        float dx = CENTER_X - x - 0.5f; 
         for (int y = 0; y < DATA_SIZE_Y; ++y) {
-            float dy = CENTER_Y - y - 0.5f; //
+            float dy = CENTER_Y - y - 0.5f; 
             float dist = std::sqrt(dx * dx + dy * dy);
             
             float ratio = dist * max_dist_inv;
-            float sigma_minor = 0.5f + ratio * 2.5f; //
-            float eccentricity = 0.9f * ratio;     //
+            float sigma_minor = 0.5f + ratio * 2.5f; 
+            float eccentricity = 0.9f * ratio;     
             
             float ecc_sq = eccentricity * eccentricity;
-            float denom = (ecc_sq >= 1.0f) ? 0.001f : std::sqrt(1.0f - ecc_sq); //
+            float denom = (ecc_sq >= 1.0f) ? 0.001f : std::sqrt(1.0f - ecc_sq); 
             float sigma_major = sigma_minor / denom;
 
-            float angle = std::atan2(dy, dx); //
+            float angle = std::atan2(dy, dx); 
             
             int index = idx(x, y);
             s_maj[index] = sigma_major;
             s_min[index] = sigma_minor;
             sa[index]    = std::sin(angle);
             ca[index]    = std::cos(angle);
-            nc[index]    = 1.0f / (2.0f * pi * sigma_major * sigma_minor); //
+            nc[index]    = 1.0f / (2.0f * pi * sigma_major * sigma_minor); 
         }
     }
 
     // --- 1b. Grid Indexing ---
-    //
     auto grid_counts_ptr = std::make_unique<int[]>(GRID_W * GRID_H);
-    // Note: This is a 3D flattened array: grid[gx][gy][event_index]
+    // This is a 3D flattened array: grid[gx][gy][event_index]
     auto grid_indices_ptr = std::make_unique<int[]>(GRID_W * GRID_H * MAX_EVENTS_PER_CELL);
     
     int* g_cnt = grid_counts_ptr.get();
@@ -127,7 +122,7 @@ void core_calculation(const std::vector<Event>& data, float* ratio_grid, float* 
 
     long n_events = data.size();
     for (int i = 0; i < n_events; ++i) {
-        int gx = static_cast<int>(data[i].x) / CELL_SIZE; //
+        int gx = static_cast<int>(data[i].x) / CELL_SIZE; 
         int gy = static_cast<int>(data[i].y) / CELL_SIZE;
         
         if (gx >= 0 && gx < GRID_W && gy >= 0 && gy < GRID_H) {
@@ -136,25 +131,22 @@ void core_calculation(const std::vector<Event>& data, float* ratio_grid, float* 
             if (c < MAX_EVENTS_PER_CELL) {
                 // 3D index for grid_indices
                 g_idx[grid_index * MAX_EVENTS_PER_CELL + c] = i;
-                g_cnt[grid_index]++; //
+                g_cnt[grid_index]++; 
             }
         }
     }
     
     // --- 2. Core Calculation (Parallelized) ---
-    //
     
     // Initialize output grids to zero
     std::fill_n(ratio_grid, DATA_SIZE_X * DATA_SIZE_Y, 0.0f);
     std::fill_n(R_grid, DATA_SIZE_X * DATA_SIZE_Y, 0.0f);
 
     // This is the C++/OpenMP equivalent of 'prange(GRID_W)'
-    //
     #pragma omp parallel for
     for (int gx = 0; gx < GRID_W; ++gx) {
         
         // This array is local to each thread, simulating the 'stack array'
-        //
         float local_s[256]; 
 
         for (int gy = 0; gy < GRID_H; ++gy) {
@@ -171,7 +163,7 @@ void core_calculation(const std::vector<Event>& data, float* ratio_grid, float* 
                 }
                 if (has_events) break;
             }
-            if (!has_events) continue; //
+            if (!has_events) continue; 
 
             // --- Pixel Loop ---
             //
@@ -187,17 +179,16 @@ void core_calculation(const std::vector<Event>& data, float* ratio_grid, float* 
                     int p_idx = idx(x, y); // Pixel index
                     
                     // --- Gather Photons from 3x3 Grid ---
-                    //
                     for (int ix = std::max(0, gx - 1); ix < std::min(GRID_W, gx + 2); ++ix) {
                         for (int iy = std::max(0, gy - 1); iy < std::min(GRID_H, gy + 2); ++iy) {
                             
                             int grid_index = ix * GRID_H + iy;
                             int cnt = g_cnt[grid_index];
-                            if (cnt == 0) continue; //
+                            if (cnt == 0) continue; 
 
                             for (int k = 0; k < cnt; ++k) {
-                                int event_idx = g_idx[grid_index * MAX_EVENTS_PER_CELL + k]; //
-                                float dx_ev = data[event_idx].x - x; //
+                                int event_idx = g_idx[grid_index * MAX_EVENTS_PER_CELL + k];
+                                float dx_ev = data[event_idx].x - x;
                                 float dy_ev = data[event_idx].y - y;
                                 
                                 // Bounding Box Check
@@ -209,7 +200,7 @@ void core_calculation(const std::vector<Event>& data, float* ratio_grid, float* 
                                     float val = std::exp(-expo) * nc[p_idx];
                                     
                                     if (local_count < 256) {
-                                        local_s[local_count] = val; //
+                                        local_s[local_count] = val; 
                                         local_count++;
                                     }
                                 }
@@ -217,10 +208,9 @@ void core_calculation(const std::vector<Event>& data, float* ratio_grid, float* 
                         }
                     } // end 3x3 grid search
                     
-                    if (local_count == 0) continue; //
+                    if (local_count == 0) continue; 
 
                     // --- R Iteration ---
-                    //
                     float R = INITIAL_R;
                     for (int iter = 0; iter < ITERATION; ++iter) {
                         float temp_R = 0.0f;
@@ -230,10 +220,9 @@ void core_calculation(const std::vector<Event>& data, float* ratio_grid, float* 
                         }
                         R = temp_R;
                     }
-                    R_grid[p_idx] = R; //
+                    R_grid[p_idx] = R; 
 
                     // --- Log Likelihood ---
-                    //
                     float log_sum = 0.0f;
                     for (int k = 0; k < local_count; ++k) {
                         log_sum += std::log(1.0f + R * local_s[k] * INV_BKG);
@@ -260,13 +249,11 @@ std::vector<Source> find_local_maxima(const float* ratio_grid, const float* R_gr
             float val = ratio_grid[p_idx];
 
             // 1. Check threshold
-            //
             if (val < THRESHOLD) {
                 continue;
             }
 
             // 2. Check if it's a local maximum
-            //
             bool is_max = true;
             for (int i = r - W_RADIUS; i <= r + W_RADIUS; ++i) {
                 for (int j = c - W_RADIUS; j <= c + W_RADIUS; ++j) {
@@ -274,7 +261,7 @@ std::vector<Source> find_local_maxima(const float* ratio_grid, const float* R_gr
                         continue;
                     }
                     // Check if neighbor is greater
-                    if (ratio_grid[idx(i, j)] > val) { //
+                    if (ratio_grid[idx(i, j)] > val) { 
                         is_max = false;
                         break;
                     }
@@ -290,7 +277,6 @@ std::vector<Source> find_local_maxima(const float* ratio_grid, const float* R_gr
                 // shared 'sources' vector from multiple threads.
                 #pragma omp critical
                 {
-                    //
                     sources.push_back({static_cast<float>(r), 
                                        static_cast<float>(c), 
                                        R_grid[p_idx]});
@@ -314,7 +300,6 @@ void write_fits_results(const std::string& filename, const std::vector<Source>& 
 
     try {
         // 1. Open the FITS file in READWRITE mode
-        //
         fits_open_file(&fptr, filename.c_str(), READWRITE, &status);
         check_fits_status(status);
 
@@ -324,7 +309,6 @@ void write_fits_results(const std::string& filename, const std::vector<Source>& 
         check_fits_status(status);
 
         // 3. Get column numbers
-        //
         int x_col, y_col, rate_col;
         fits_get_colnum(fptr, CASEINSEN, (char*)"x", &x_col, &status);
         check_fits_status(status);
@@ -334,7 +318,7 @@ void write_fits_results(const std::string& filename, const std::vector<Source>& 
         check_fits_status(status);
 
         // 4. Prepare C-style arrays from the std::vector<Source>
-        // We must match the data types in the FITS file.
+        // must match the data types in the FITS file.
         // 'x' and 'y' are format 'I' (long integer in C)
         // 'countrate' is format 'D' (double in C)
         std::unique_ptr<long[]> x_data(new long[n_sources]);
@@ -349,7 +333,6 @@ void write_fits_results(const std::string& filename, const std::vector<Source>& 
         }
 
         // 5. Write the data to the columns
-        //
         long firstrow = 1;
         long firstelem = 1;
         fits_write_col(fptr, TLONG,   x_col,    firstrow, firstelem, n_sources, x_data.get(),    &status);
@@ -457,14 +440,14 @@ int main() {
 
         // 3. Calculate
         std::cout << "Start calculating map..." << std::endl;
-        core_calculation(data, ratio_grid, R_grid); //
+        core_calculation(data, ratio_grid, R_grid); 
 
         auto t2 = std::chrono::high_resolution_clock::now();
         std::cout << "Map calculation time: " 
                   << std::chrono::duration<double>(t2 - t1).count() << "s" << std::endl;
 
         // 4. Detect Sources (Stub)
-        std::vector<Source> sources = find_local_maxima(ratio_grid, R_grid); //
+        std::vector<Source> sources = find_local_maxima(ratio_grid, R_grid); 
         std::cout << "Detected sources (stub): " << sources.size() << std::endl;
 
         auto t3 = std::chrono::high_resolution_clock::now();
@@ -472,7 +455,7 @@ int main() {
                   << std::chrono::duration<double>(t3 - t2).count() << "s" << std::endl;
 
         // 5. Write Results (Stub)
-        write_fits_results("detection_info.fits", sources); //
+        write_fits_results("detection_info.fits", sources); 
 
         auto t4 = std::chrono::high_resolution_clock::now();
         std::cout << "Data IO time (stub): " 
